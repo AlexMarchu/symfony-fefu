@@ -15,110 +15,113 @@ class BookingRepository {
         $this->csvService = $csvService;
     }
 
+    public function findAllHouses(): array {
+        return $this->csvService->readCSV(self::HOUSES_CSV);
+    }
+
     public function findAllAvailableHouses(): array {
-        $response = [
-            'data' => null,
-            'error' => null,
-            'code' => Response::HTTP_OK
-        ];
+        $houses = $this->csvService->readCSV(self::HOUSES_CSV);
 
-        try {
-            $houses = $this->csvService->readCSV(self::HOUSES_CSV);
-
-            $data = [];
-            foreach($houses as $house) {
-                if (!$house['is_available']) 
-                    continue;
-                $data[] = $house;
-            }
-            $response['data'] = $data;
-        } catch (\Exception $e) {
-            $response['error'] = $e->getMessage();
-            $response['code'] = Response::HTTP_INTERNAL_SERVER_ERROR;
+        $data = [];
+        foreach($houses as $house) {
+            if (!$house['is_available']) 
+                continue;
+            $data[] = $house;
         }
 
-        return $response;
+        return $data;
     }
 
-    public function createBooking(int $houseId, string $phone, string $comment): array {
-        $response = [
-            'data' => null,
-            'error' => null,
-            'code' => Response::HTTP_OK
-        ];
+    public function findHouseById($houseId): ?array {
+        $houses = $this->csvService->readCSV(self::HOUSES_CSV);
 
-        try {
-            $houses = $this->csvService->readCSV(self::HOUSES_CSV);
-
-            $isHouseAvailable = false;
-            foreach($houses as &$house) {
-                if ($house['id'] == $houseId && $house['is_available']) {
-                    $isHouseAvailable = true;
-                    $house['is_available'] = 0;
-                    break;
-                }
-            }
-
-            if (!$isHouseAvailable) {
-                $response['error'] = "The house with id $houseId is not available now or does not exists!";
-                $response['code'] = Response::HTTP_UNPROCESSABLE_ENTITY;
-            } else {
-                $newId = 1;
-                if (!empty($bookings)) {
-                    $maxId = max(array_column($bookings, 'id'));
-                    $newId = $maxId + 1;
-                }
-
-                $newBooking = [
-                    'id' => $newId,
-                    'house_id' => $houseId,
-                    'phone' => $phone,
-                    'comment' => $comment,
-                    'created_at' => date('Y-m-d H:i:s'),
-                    'status' => self::STATUS_ACTIVE
-                ];
-
-                $this->csvService->writeCSV(self::HOUSES_CSV, $houses);
-                $this->csvService->appendCSV(self::BOOKINGS_CSV, [$newBooking]);
-            }
-        } catch (\Exception $e) {
-            $response['error'] = $e->getMessage();
-            $response['code'] = Response::HTTP_INTERNAL_SERVER_ERROR;
+        foreach ($houses as $house) {
+            if ($house['id'] == $houseId)
+                return $house;
         }
 
-        return $response;
+        return null;
     }
 
-    public function updateBookingComment(int $bookingId, string $comment): array {
-        $response = [
-            'data' => null,
-            'error' => null,
-            'code' => Response::HTTP_OK
+    public function updateHouse(array $house): void {
+        $houses = $this->findAllHouses();
+
+        foreach ($houses as &$h) {
+            if ($h['id'] == $house['id']) {
+                $h = $house;
+                break;
+            }
+        }
+
+        $this->csvService->writeCSV(self::HOUSES_CSV, $houses);
+    }
+
+    public function findAllBookings(): array {
+        return $this->csvService->readCSV(self::BOOKINGS_CSV);
+    }
+
+    public function findBookingById($bookingId): ?array {
+        $bookings = $this->findAllBookings();
+
+        foreach ($bookings as $booking)
+            if ($booking['id'] == $bookingId)
+                return $booking;
+
+        return null;
+    }
+
+    public function createBooking(array $bookingData): array {
+        $bookings = $this->findAllBookings();
+        
+        $newId = 1;
+        if (!empty($bookings)) {
+            $ids = array_column($bookings, 'id');
+            $newId = max($ids) + 1;
+        }
+        
+        $newBooking = [
+            'id' => $newId,
+            'house_id' => $bookingData['house_id'],
+            'phone' => $bookingData['phone'],
+            'comment' => $bookingData['comment'],
+            'created_at' => date('Y-m-d H:i:s'),
+            'status' => self::STATUS_ACTIVE
         ];
         
-        try {
-            $bookings = $this->csvService->readCSV(self::BOOKINGS_CSV);
+        $this->csvService->appendCSV(self::BOOKINGS_CSV, [$newBooking]);
+        
+        return $newBooking;
+    }
 
-            $isFound = false;
-            foreach($bookings as &$booking) {
-                if ($booking['id'] == $bookingId) {
-                    $isFound = true;
-                    $booking['comment'] = $comment;
-                    break;
-                }
-            }
+    public function updateBookingComment(int $bookingId, string $comment): void {
+        $bookings = $this->csvService->readCSV(self::BOOKINGS_CSV);
 
-            if ($isFound) {
-                $this->csvService->writeCSV(self::BOOKINGS_CSV, $bookings);
-            } else {
-                $response['error'] = "The booking with id $bookingId does not exists!";
-                $response['code'] = Response::HTTP_UNPROCESSABLE_ENTITY;
+        $isFound = false;
+        foreach($bookings as &$booking) {
+            if ($booking['id'] == $bookingId) {
+                $isFound = true;
+                $booking['comment'] = $comment;
+                break;
             }
-        } catch (\Exception $e) {
-            $response['error'] = $e->getMessage();
-            $response['code'] = Response::HTTP_INTERNAL_SERVER_ERROR;
         }
 
-        return $response;
+        if ($isFound) {
+            $this->csvService->writeCSV(self::BOOKINGS_CSV, $bookings);
+        } else {
+            throw new \RuntimeException("The booking with id $bookingId does not exists!");
+        }
+    }
+
+    public function updateBooking(array $booking): void {
+        $bookings = $this->findAllBookings();
+
+        foreach ($bookings as &$b) {
+            if ($b['id'] == $booking['id']) {
+                $b = $booking;
+                break;
+            }
+        }
+
+        $this->csvService->writeCSV(self::BOOKINGS_CSV, $bookings);
     }
 }

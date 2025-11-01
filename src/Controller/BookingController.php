@@ -8,6 +8,9 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
 class BookingController extends AbstractController {
 
@@ -20,20 +23,17 @@ class BookingController extends AbstractController {
 
     #[Route('/api/houses/available', name: 'available_houses', methods: ['GET'])]
     public function getAvailableHouses(): JsonResponse {
-        $result = $this->bookingRepository->findAllAvailableHouses();
-
-        if ($result['error']) {
-            return $this->json([
-                'success' => false,
-                'message' => $result['error']
-            ], $result['code']);
+        try {
+            $availableHouses = $this->bookingRepository->findAllAvailableHouses();
+            
+            return $this->json($availableHouses, Response::HTTP_OK);
+            
+        } catch (\Exception $e) {
+            throw new HttpException(
+                Response::HTTP_INTERNAL_SERVER_ERROR,
+                "Internal server error: {$e->getMessage()}"
+            );
         }
-
-        return $this->json([
-            'success' => true,
-            'data' => $result['data'],
-            'count' => count($result['data'])
-        ], $result['code']);
     }
 
     #[Route('/api/bookings', name: 'create_booking', methods: ['POST'])]
@@ -41,10 +41,10 @@ class BookingController extends AbstractController {
         $data = json_decode($request->getContent(), true);
 
         if (!isset($data['house_id']) || !isset($data['phone'])) {
-            return $this->json([
-                'success' => false,
-                'message' => 'Missing required field: house_id or phone!'
-            ], Response::HTTP_BAD_REQUEST);
+            throw new HttpException(
+                Response::HTTP_BAD_REQUEST,
+                'Missing required field: house_id or phone!'
+            );
         }
 
         $houseId = (int)$data['house_id'];
@@ -52,26 +52,43 @@ class BookingController extends AbstractController {
         $comment = $data['comment'] ?? '';
 
         if (empty($phone)) {
-            return $this->json([
-                'success' => false,
-                'message' => 'Phone number can not be empty'
-            ], Response::HTTP_BAD_REQUEST);
+            throw new HttpException(
+                Response::HTTP_BAD_REQUEST,
+                'Phone number can not be empty'
+            );
         }
 
-        $result = $this->bookingRepository->createBooking($houseId, $phone, $comment);
-        
-        if ($result['error']) {
-            return $this->json([
-                'success' => false,
-                'message' => $result['error']
-            ], $result['code']);
-        }
+        try {
+            $house = $this->bookingRepository->findHouseById($houseId);
+            if (!$house) {
+                throw new NotFoundHttpException("House with id $houseId not found");
+            }
 
-        return $this->json([
-            'success' => true,
-            'message' => 'Booking created successfully',
-            'data' => $result['data']
-        ], Response::HTTP_CREATED);
+            if (!$house['is_available']) {
+                throw new UnprocessableEntityHttpException("The house with id $houseId is not available");
+            }
+
+            $bookingData = [
+                'house_id' => $houseId,
+                'phone' => $phone,
+                'comment' => $comment
+            ];
+            
+            $newBooking = $this->bookingRepository->createBooking($bookingData);
+            
+            $house['is_available'] = 0;
+            $this->bookingRepository->updateHouse($house);
+
+            return $this->json($newBooking, Response::HTTP_CREATED);
+            
+        } catch (HttpException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            throw new HttpException(
+                Response::HTTP_INTERNAL_SERVER_ERROR,
+                "Internal server error: {$e->getMessage()}"
+            );
+        }
     }
 
     #[Route('/api/bookings/{id}', name: 'update_booking_comment', methods: ['PUT'])]
@@ -79,27 +96,32 @@ class BookingController extends AbstractController {
         $data = json_decode($request->getContent(), true);
 
         if (!isset($data['comment'])) {
-            return $this->json([
-                'success' => false,
-                'message' => 'Missing required field: comment!'
-            ], Response::HTTP_BAD_REQUEST);
+            throw new HttpException(
+                Response::HTTP_BAD_REQUEST,
+                'Missing required field: comment!'
+            );
         }
 
         $comment = trim($data['comment']);
 
-        $result = $this->bookingRepository->updateBookingComment($id, $comment);
-        
-        if ($result['error']) {
-            return $this->json([
-                'success' => false,
-                'message' => $result['error']
-            ], $result['code']);
-        }
+        try {
+            $booking = $this->bookingRepository->findBookingById($id);
+            if (!$booking) {
+                throw new NotFoundHttpException("Booking with id $id not found");
+            }
 
-        return $this->json([
-            'success' => true,
-            'message' => 'Booking comment updated successfully',
-            'data' => $result['data']
-        ], Response::HTTP_OK);
+            $booking['comment'] = $comment;
+            $this->bookingRepository->updateBooking($booking);
+
+            return $this->json($booking, Response::HTTP_OK);
+            
+        } catch (HttpException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            throw new HttpException(
+                Response::HTTP_INTERNAL_SERVER_ERROR,
+                "Internal server error: {$e->getMessage()}"
+            );
+        }
     }
 }
