@@ -2,126 +2,45 @@
 
 namespace App\Repository;
 
-use App\Service\CSVService;
-use Symfony\Component\HttpFoundation\Response;
+use App\Entity\Booking;
+use App\Entity\House;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\Persistence\ManagerRegistry;
 
-class BookingRepository {
-
-    private const HOUSES_CSV = 'houses.csv';
-    private const BOOKINGS_CSV = 'bookings.csv';
-    private const STATUS_ACTIVE = 'active';
-
-    public function __construct(private CSVService $csvService) {
-        $this->csvService = $csvService;
+class BookingRepository extends ServiceEntityRepository {
+    public function __construct(ManagerRegistry $registry) {
+        parent::__construct($registry, Booking::class);
     }
 
-    public function findAllHouses(): array {
-        return $this->csvService->readCSV(self::HOUSES_CSV);
+    public function findByHouse(House $house) {
+        return $this->createQueryBuilder('b')
+            ->where('b.house = :house')
+            ->setParameter('house', $house)
+            ->getQuery()
+            ->getResult();
     }
 
-    public function findAllAvailableHouses(): array {
-        $houses = $this->csvService->readCSV(self::HOUSES_CSV);
-
-        $data = [];
-        foreach($houses as $house) {
-            if (!$house['is_available']) 
-                continue;
-            $data[] = $house;
-        }
-
-        return $data;
+    public function findActiveBookingByHouseId(int $houseId): ?Booking {
+        return $this->createQueryBuilder('b')
+            ->where('b.house = :houseId')
+            ->andWhere('b.status = :activeStatus')
+            ->setParameter('houseId', $houseId)
+            ->setParameter('activeStatus', 'active')
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 
-    public function findHouseById($houseId): ?array {
-        $houses = $this->csvService->readCSV(self::HOUSES_CSV);
-
-        foreach ($houses as $house) {
-            if ($house['id'] == $houseId)
-                return $house;
-        }
-
-        return null;
-    }
-
-    public function updateHouse(array $house): void {
-        $houses = $this->findAllHouses();
-
-        foreach ($houses as &$h) {
-            if ($h['id'] == $house['id']) {
-                $h = $house;
-                break;
-            }
-        }
-
-        $this->csvService->writeCSV(self::HOUSES_CSV, $houses);
-    }
-
-    public function findAllBookings(): array {
-        return $this->csvService->readCSV(self::BOOKINGS_CSV);
-    }
-
-    public function findBookingById($bookingId): ?array {
-        $bookings = $this->findAllBookings();
-
-        foreach ($bookings as $booking)
-            if ($booking['id'] == $bookingId)
-                return $booking;
-
-        return null;
-    }
-
-    public function createBooking(array $bookingData): array {
-        $bookings = $this->findAllBookings();
+    public function save(Booking $booking, bool $flush = true): void {
+        $this->getEntityManager()->persist($booking);
         
-        $newId = 1;
-        if (!empty($bookings)) {
-            $ids = array_column($bookings, 'id');
-            $newId = max($ids) + 1;
-        }
-        
-        $newBooking = [
-            'id' => $newId,
-            'house_id' => $bookingData['house_id'],
-            'phone' => $bookingData['phone'],
-            'comment' => $bookingData['comment'],
-            'created_at' => date('Y-m-d H:i:s'),
-            'status' => self::STATUS_ACTIVE
-        ];
-        
-        $this->csvService->appendCSV(self::BOOKINGS_CSV, [$newBooking]);
-        
-        return $newBooking;
+        if ($flush)
+            $this->getEntityManager()->flush();
     }
 
-    public function updateBookingComment(int $bookingId, string $comment): void {
-        $bookings = $this->csvService->readCSV(self::BOOKINGS_CSV);
+    public function remove(Booking $booking, bool $flush = true): void {
+        $this->getEntityManager()->remove($booking);
 
-        $isFound = false;
-        foreach($bookings as &$booking) {
-            if ($booking['id'] == $bookingId) {
-                $isFound = true;
-                $booking['comment'] = $comment;
-                break;
-            }
-        }
-
-        if ($isFound) {
-            $this->csvService->writeCSV(self::BOOKINGS_CSV, $bookings);
-        } else {
-            throw new \RuntimeException("The booking with id $bookingId does not exists!");
-        }
-    }
-
-    public function updateBooking(array $booking): void {
-        $bookings = $this->findAllBookings();
-
-        foreach ($bookings as &$b) {
-            if ($b['id'] == $booking['id']) {
-                $b = $booking;
-                break;
-            }
-        }
-
-        $this->csvService->writeCSV(self::BOOKINGS_CSV, $bookings);
+        if ($flush)
+            $this->getEntityManager()->flush();
     }
 }
