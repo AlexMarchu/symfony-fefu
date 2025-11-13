@@ -1,33 +1,38 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests;
 
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Doctrine\ORM\EntityManagerInterface;
-use App\Entity\User;
-use App\Entity\House;
 use App\Entity\Booking;
+use App\Entity\House;
+use App\Entity\User;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-abstract class AbstractAPITestCase extends WebTestCase {
-
+abstract class AbstractAPITestCase extends WebTestCase
+{
     protected $client;
     protected $entityManager;
 
-    protected function setUp(): void {
+    protected function setUp(): void
+    {
         $this->client = static::createClient();
         $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
 
         $this->clearDatabase();
     }
 
-    protected function clearDatabase(): void {
+    protected function clearDatabase(): void
+    {
         $connection = $this->entityManager->getConnection();
         $connection->executeStatement('DELETE FROM users');
         $connection->executeStatement('DELETE FROM houses');
         $connection->executeStatement('DELETE FROM bookings');
     }
 
-    protected function createUser(string $name, string $phone): User {
+    protected function createUser(string $name, string $phone): User
+    {
         $user = new User($name, $phone);
 
         $this->entityManager->persist($user);
@@ -36,7 +41,8 @@ abstract class AbstractAPITestCase extends WebTestCase {
         return $user;
     }
 
-    protected function createHouse(string $name, int $sleepingPlaces, int $distanceToSea): House {
+    protected function createHouse(string $name, int $sleepingPlaces, int $distanceToSea): House
+    {
         $house = new House($name, $sleepingPlaces, $distanceToSea);
 
         $this->entityManager->persist($house);
@@ -45,7 +51,8 @@ abstract class AbstractAPITestCase extends WebTestCase {
         return $house;
     }
 
-    protected function createBooking(User $user, House $house, string $comment = ''): Booking {
+    protected function createBooking(User $user, House $house, string $comment = ''): Booking
+    {
         $booking = new Booking($house, $user, $comment);
 
         $this->entityManager->persist($booking);
@@ -54,7 +61,8 @@ abstract class AbstractAPITestCase extends WebTestCase {
         return $booking;
     }
 
-    protected function makeRequest(string $method, string $url, array $data = null): array {
+    protected function makeRequest(string $method, string $url, ?array $data = null): array
+    {
         $this->client->request(
             $method,
             $url,
@@ -70,7 +78,7 @@ abstract class AbstractAPITestCase extends WebTestCase {
         return [
             'status' => $statusCode,
             'content' => json_decode($response->getContent(), true),
-            'successful' => $statusCode >= 200 && $statusCode < 300
+            'successful' => $statusCode >= 200 && $statusCode < 300,
         ];
     }
 }

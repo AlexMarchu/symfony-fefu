@@ -1,12 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'houses')]
-class House {
+class House
+{
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
@@ -31,34 +34,44 @@ class House {
         $this->distanceToSea = $distanceToSea;
     }
 
-    public function getId(): ?int {
+    public function getId(): ?int
+    {
         return $this->id;
     }
 
-    public function getName(): string {
+    public function getName(): string
+    {
         return $this->name;
     }
 
-    public function setName(string $name): self {
+    public function setName(string $name): self
+    {
         $this->name = $name;
+
         return $this;
     }
 
-    public function getSleepingPlaces(): int {
+    public function getSleepingPlaces(): int
+    {
         return $this->sleepingPlaces;
     }
 
-    public function setSleepingPlaces(int $beds): self {
+    public function setSleepingPlaces(int $beds): self
+    {
         $this->sleepingPlaces = $beds;
+
         return $this;
     }
 
-    public function getDistanceToSea(): int {
+    public function getDistanceToSea(): int
+    {
         return $this->distanceToSea;
     }
 
-    public function setDistanceToSea(int $distanceToSea): self {
+    public function setDistanceToSea(int $distanceToSea): self
+    {
         $this->distanceToSea = $distanceToSea;
+
         return $this;
     }
 }

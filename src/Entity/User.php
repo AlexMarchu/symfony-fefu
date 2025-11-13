@@ -1,14 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Entity;
 
-use Doctrine\ORM\Mapping as ORM;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'users')]
-class User {
+class User
+{
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
@@ -36,37 +39,47 @@ class User {
         $this->bookings = new ArrayCollection();
     }
 
-    public function getId(): ?int {
+    public function getId(): ?int
+    {
         return $this->id;
     }
 
-    public function getName(): string {
+    public function getName(): string
+    {
         return $this->name;
     }
 
-    public function setName(string $name): self {
+    public function setName(string $name): self
+    {
         $this->name = $name;
+
         return $this;
     }
 
-    public function getPhone(): string {
+    public function getPhone(): string
+    {
         return $this->phone;
     }
 
-    public function setPhone(string $phone): self {
+    public function setPhone(string $phone): self
+    {
         $this->phone = $phone;
+
         return $this;
     }
 
-    public function getCreatedAt(): \DateTime {
+    public function getCreatedAt(): \DateTime
+    {
         return $this->createdAt;
     }
 
-    public function getBookings(): Collection {
+    public function getBookings(): Collection
+    {
         return $this->bookings;
     }
 
-    public function addBooking(Booking $booking): self {
+    public function addBooking(Booking $booking): self
+    {
         if (!$this->bookings->contains($booking)) {
             $this->bookings->add($booking);
             $booking->setUser($this);
@@ -75,8 +88,10 @@ class User {
         return $this;
     }
 
-    public function removeBooking(Booking $booking): self {
+    public function removeBooking(Booking $booking): self
+    {
         $this->bookings->removeElement($booking);
+
         return $this;
     }
 }

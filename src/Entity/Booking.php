@@ -1,13 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'bookings')]
-class Booking {
-    const STATUS_ACTIVE = 'active';
+class Booking
+{
+    private const STATUS_ACTIVE = 'active';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -34,7 +37,7 @@ class Booking {
     public function __construct(
         House $house,
         User $user,
-        string $comment = ''
+        string $comment = '',
     ) {
         $this->house = $house;
         $this->user = $user;
@@ -44,47 +47,61 @@ class Booking {
         $user->addBooking($this);
     }
 
-    public function getId(): ?int {
+    public function getId(): ?int
+    {
         return $this->id;
     }
 
-    public function getHouse(): House {
+    public function getHouse(): House
+    {
         return $this->house;
     }
 
-    public function setHouse(House $house): self {
+    public function setHouse(House $house): self
+    {
         $this->house = $house;
+
         return $this;
     }
 
-    public function getUser(): User {
+    public function getUser(): User
+    {
         return $this->user;
     }
 
-    public function setUser(User $user): self {
+    public function setUser(User $user): self
+    {
         $this->user = $user;
+
         return $this;
     }
 
-    public function getComment(): ?string {
+    public function getComment(): ?string
+    {
         return $this->comment;
     }
 
-    public function setComment(?string $comment): self {
+    public function setComment(?string $comment): self
+    {
         $this->comment = $comment;
+
         return $this;
     }
 
-    public function getCreatedAt(): \DateTime {
+    public function getCreatedAt(): \DateTime
+    {
         return $this->createdAt;
     }
 
-    public function getStatus(): string {
+    public function getStatus(): string
+    {
         return $this->status;
     }
 
-    public function setStatus(string $status): self {
+    public function setStatus(string $status): self
+    {
         $this->status = $status;
+
         return $this;
     }
 }
