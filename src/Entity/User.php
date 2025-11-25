@@ -7,11 +7,17 @@ namespace App\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Override;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'users')]
-class User
+class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
+    public const ROLE_USER = 'ROLE_USER';
+    public const ROLE_ADMIN = 'ROLE_ADMIN';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
@@ -23,6 +29,12 @@ class User
     #[ORM\Column(type: 'string', length: 16, unique: true, nullable: false)]
     private string $phone;
 
+    #[ORM\Column(type: 'json')]
+    private array $roles = [];
+
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    private ?string $password = null;
+
     #[ORM\Column(type: 'datetime')]
     private \DateTime $createdAt;
 
@@ -32,9 +44,11 @@ class User
     public function __construct(
         string $name = '',
         string $phone = '',
+        array $roles = [self::ROLE_USER],
     ) {
         $this->name = $name;
         $this->phone = $phone;
+        $this->roles = $roles;
         $this->createdAt = new \DateTime();
         $this->bookings = new ArrayCollection();
     }
@@ -93,5 +107,54 @@ class User
         $this->bookings->removeElement($booking);
 
         return $this;
+    }
+
+    /**
+     * Security methods
+     */
+    #[Override]
+    public function getRoles(): array
+    {
+        $roles = $this->roles;
+        $roles[] = self::ROLE_USER;
+
+        return array_unique($roles);
+    }
+
+    public function setRoles(array $roles): self
+    {
+        $this->roles = $roles;
+
+        return $this;
+    }
+
+    #[Override]
+    public function getPassword(): ?string
+    {
+        return $this->password;
+    }
+
+    public function setPassword(?string $password): self
+    {
+        $this->password = $password;
+
+        return $this;
+    }
+
+    public function getSalt(): ?string
+    {
+        return null;
+    }
+
+    #[Override]
+    public function eraseCredentials(): void
+    {
+    }
+
+    #[Override]
+    public function getUserIdentifier(): string
+    {
+        /** @var non-empty-string */
+        return $this->phone;
     }
 }

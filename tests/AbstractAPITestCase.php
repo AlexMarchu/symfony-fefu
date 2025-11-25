@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests;
 
+use App\Entity\AccessToken;
 use App\Entity\Booking;
 use App\Entity\House;
 use App\Entity\User;
@@ -14,6 +15,7 @@ abstract class AbstractAPITestCase extends WebTestCase
 {
     protected $client;
     protected $entityManager;
+    protected $accessToken;
 
     protected function setUp(): void
     {
@@ -21,19 +23,41 @@ abstract class AbstractAPITestCase extends WebTestCase
         $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
 
         $this->clearDatabase();
+        $this->createTestUserAndToken();
     }
 
     protected function clearDatabase(): void
     {
         $connection = $this->entityManager->getConnection();
+        $connection->executeStatement('DELETE FROM access_tokens');
+        $connection->executeStatement('DELETE FROM bookings');
         $connection->executeStatement('DELETE FROM users');
         $connection->executeStatement('DELETE FROM houses');
-        $connection->executeStatement('DELETE FROM bookings');
     }
 
-    protected function createUser(string $name, string $phone): User
+    protected function createTestUserAndToken(): void
     {
-        $user = new User($name, $phone);
+        $user = new User('Test User', '+70123012304', ['ROLE_USER']);
+        $user->setPassword('$2y$13$abcdefghijklmnopqrstuv');
+
+        $this->entityManager->persist($user);
+        $this->entityManager->flush();
+
+        $accessToken = new AccessToken();
+        $accessToken->setUser($user);
+        $accessToken->setValue('test_access_token');
+        $accessToken->setExpiresAt(new \DateTimeImmutable('+1 hour'));
+
+        $this->entityManager->persist($accessToken);
+        $this->entityManager->flush();
+
+        $this->accessToken = 'test_access_token';
+    }
+
+    protected function createUser(string $name, string $phone, array $roles = ['ROLE_USER']): User
+    {
+        $user = new User($name, $phone, $roles);
+        $user->setPassword(password_hash('password', PASSWORD_DEFAULT));
 
         $this->entityManager->persist($user);
         $this->entityManager->flush();
@@ -61,14 +85,20 @@ abstract class AbstractAPITestCase extends WebTestCase
         return $booking;
     }
 
-    protected function makeRequest(string $method, string $url, ?array $data = null): array
+    protected function makeRequest(string $method, string $url, ?array $data = null, bool $authenticated = true): array
     {
+        $headers = ['Content-Type' => 'application/json'];
+
+        if ($authenticated && $this->accessToken) {
+            $headers['HTTP_AUTHORIZATION'] = 'Bearer ' . $this->accessToken;
+        }
+
         $this->client->request(
             $method,
             $url,
             [],
             [],
-            ['Content-Type' => 'application/json'],
+            $headers,
             $data ? json_encode($data) : null
         );
 
@@ -80,5 +110,21 @@ abstract class AbstractAPITestCase extends WebTestCase
             'content' => json_decode($response->getContent(), true),
             'successful' => $statusCode >= 200 && $statusCode < 300,
         ];
+    }
+
+    protected function loginAndGetToken(string $phone = '+79999999999', string $password = 'password'): string
+    {
+        $loginData = [
+            'phone' => $phone,
+            'password' => $password,
+        ];
+
+        $response = $this->makeRequest('POST', '/api/auth/login', $loginData, false);
+
+        if ($response['successful']) {
+            return $response['content']['access_token']['value'];
+        }
+
+        return '';
     }
 }

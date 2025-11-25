@@ -70,6 +70,9 @@ clean: down
 	rm -rf var/cache/* var/log/* .phpcs-cache .php-cs-fixer.cache var/cache/.psalm-cache
 
 # Development commands
+console:
+	$(PHP) bash
+	
 install:
 	$(COMPOSER) install
 
@@ -82,11 +85,14 @@ migration:
 migrate:
 	$(CONSOLE) doctrine:migrations:migrate --no-interaction
 
+migrate-test:
+	$(CONSOLE) doctrine:migrations:migrate --env=test --no-interaction
+
 fixtures:
 	$(CONSOLE) doctrine:fixtures:load --no-interaction
 
 # Setup development environment
-dev-setup: up install migrate
+dev-setup: up install migrate migrate-test
 	@echo "Development environment is ready!"
 	@echo "API available at: http://localhost:8080"
 	@echo "Database available at: localhost:5433"
@@ -97,6 +103,11 @@ db-reset:
 	$(CONSOLE) doctrine:database:create
 	$(CONSOLE) doctrine:migrations:migrate --no-interaction
 
+db-reset-test:
+	$(CONSOLE) doctrine:database:drop --env=test --if-exists --force
+	$(CONSOLE) doctrine:database:create --env=test
+	$(CONSOLE) doctrine:migrations:migrate --env=test --no-interaction
+
 db-reset-fixtures: db-reset fixtures
 
 # Cache
@@ -104,13 +115,13 @@ cache-clear:
 	$(CONSOLE) cache:clear
 
 # Testing commands
-test:
+test: migrate-test
 	$(PHP) ./vendor/bin/phpunit
 
-test-unit:
+test-unit: migrate-test
 	$(PHP) ./vendor/bin/phpunit --testsuite=unit
 
-test-coverage:
+test-coverage: migrate-test
 	$(PHP) ./vendor/bin/phpunit --coverage-html var/coverage
 
 # Code quality commands

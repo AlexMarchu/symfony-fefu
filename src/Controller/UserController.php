@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 
 class UserController extends AbstractController
@@ -19,6 +20,7 @@ class UserController extends AbstractController
     public function __construct(
         private UserRepository $userRepository,
         private UserSerializer $userSerializer,
+        private UserPasswordHasherInterface $passwordHasher
     ) {
     }
 
@@ -40,7 +42,7 @@ class UserController extends AbstractController
     {
         $data = json_decode($request->getContent(), true);
 
-        $requiredFields = ['name', 'phone'];
+        $requiredFields = ['name', 'phone', 'password'];
         foreach ($requiredFields as $field) {
             if (!isset($data[$field])) {
                 throw new HttpException(Response::HTTP_BAD_REQUEST, "Missing required field: {$field}");
@@ -49,6 +51,7 @@ class UserController extends AbstractController
 
         $phone = trim($data['phone']);
         $name = trim($data['name']);
+        $password = $data['password'];
 
         if (empty($phone)) {
             throw new HttpException(Response::HTTP_BAD_REQUEST, 'Phone number can not be empty');
@@ -61,6 +64,8 @@ class UserController extends AbstractController
             }
 
             $user = new User($name, $phone);
+            $hashedPassword = $this->passwordHasher->hashPassword($user, $password);
+            $user->setPassword($hashedPassword);
 
             $this->userRepository->save($user);
 

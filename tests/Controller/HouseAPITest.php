@@ -37,14 +37,19 @@ class HouseAPITest extends AbstractAPITestCase
         $this->assertCount(0, $data);
     }
 
+    public function testGetAllHousesUnauthorized(): void
+    {
+        $response = $this->makeRequest('GET', '/api/houses', null, false);
+        $this->assertEquals(Response::HTTP_UNAUTHORIZED, $response['status']);
+    }
+
     public function testGetAvailableHouses(): void
     {
         $houseAvailable = $this->createHouse('Available House', 2, 45);
         $houseBooked = $this->createHouse('Booked House', 3, 150);
 
         $user = $this->createUser('Pavel', '+79146765071');
-
-        $booking = $this->createBooking($user, $houseBooked);
+        $this->createBooking($user, $houseBooked);
 
         $response = $this->makeRequest('GET', '/api/houses/available');
         $data = $response['content'];
@@ -59,10 +64,9 @@ class HouseAPITest extends AbstractAPITestCase
         $house1 = $this->createHouse('House 1', 3, 60);
         $house2 = $this->createHouse('House 2', 4, 80);
 
-        $user = $this->createUser('VALERAUSSR', '+79999999999');
-
-        $booking1 = $this->createBooking($user, $house1);
-        $booking2 = $this->createBooking($user, $house2);
+        $user = $this->createUser('VALERAUSSR', '+79111111111');
+        $this->createBooking($user, $house1);
+        $this->createBooking($user, $house2);
 
         $response = $this->makeRequest('GET', '/api/houses/available');
         $data = $response['content'];
@@ -95,7 +99,6 @@ class HouseAPITest extends AbstractAPITestCase
         ];
 
         $response = $this->makeRequest('POST', '/api/houses/create', $houseData);
-
         $this->assertEquals(Response::HTTP_BAD_REQUEST, $response['status']);
     }
 
@@ -117,8 +120,8 @@ class HouseAPITest extends AbstractAPITestCase
     public function testDeleteHouseWithBookings(): void
     {
         $house = $this->createHouse('Test House', 2, 75);
-        $user = $this->createUser('VALERAUSSR', '+79999999999');
-        $booking = $this->createBooking($user, $house);
+        $user = $this->createUser('VALERAUSSR', '+79111111111');
+        $this->createBooking($user, $house);
 
         $response = $this->makeRequest('DELETE', "/api/houses/{$house->getId()}");
         $data = $response['content'];
@@ -131,7 +134,6 @@ class HouseAPITest extends AbstractAPITestCase
     public function testDeleteHouseNotFound(): void
     {
         $response = $this->makeRequest('DELETE', '/api/houses/777');
-
         $this->assertEquals(Response::HTTP_NOT_FOUND, $response['status']);
     }
 }

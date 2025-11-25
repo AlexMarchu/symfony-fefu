@@ -23,7 +23,7 @@ class UserAPITest extends AbstractAPITestCase
         $data = $response['content'];
 
         $this->assertTrue($response['successful']);
-        $this->assertCount(2, $data);
+        $this->assertCount(3, $data);
     }
 
     public function testGetAllUsersWhenEmpty(): void
@@ -32,14 +32,21 @@ class UserAPITest extends AbstractAPITestCase
         $data = $response['content'];
 
         $this->assertTrue($response['successful']);
-        $this->assertCount(0, $data);
+        $this->assertCount(1, $data);
+    }
+
+    public function testGetAllUsersUnauthorized(): void
+    {
+        $response = $this->makeRequest('GET', '/api/users', null, false);
+        $this->assertEquals(Response::HTTP_UNAUTHORIZED, $response['status']);
     }
 
     public function testCreateUserSuccess(): void
     {
         $userData = [
             'name' => 'VALERAUSSR',
-            'phone' => '+79999999999',
+            'phone' => '+78888888888',
+            'password' => 'password123',
         ];
 
         $response = $this->makeRequest('POST', '/api/users/create', $userData);
@@ -54,31 +61,30 @@ class UserAPITest extends AbstractAPITestCase
     {
         $userData = [
             'name' => 'VALERAUSSR',
+            // missing phone and password
         ];
 
         $response = $this->makeRequest('POST', '/api/users/create', $userData);
-        $data = $response['content'];
-
         $this->assertEquals(Response::HTTP_BAD_REQUEST, $response['status']);
     }
 
     public function testCreateUserDuplicatePhone(): void
     {
-        $this->createUser('Vasya', '+79999999999');
+        $this->createUser('Vasya', '+78888888888');
 
         $userData = [
             'name' => 'Petya',
-            'phone' => '+79999999999',
+            'phone' => '+78888888888',
+            'password' => 'password123',
         ];
 
         $response = $this->makeRequest('POST', '/api/users/create', $userData);
-
         $this->assertEquals(Response::HTTP_CONFLICT, $response['status']);
     }
 
     public function testDeleteUserSuccess(): void
     {
-        $user = $this->createUser('VALERAUSSR', '+79999999999');
+        $user = $this->createUser('VALERAUSSR', '+79111111111');
         $userId = $user->getId();
 
         $response = $this->makeRequest('DELETE', "/api/users/{$userId}");
@@ -93,7 +99,7 @@ class UserAPITest extends AbstractAPITestCase
 
     public function testDeleteUserWithBookings(): void
     {
-        $user = $this->createUser('VALERAUSSR', '+79999999999');
+        $user = $this->createUser('VALERAUSSR', '+79111111111');
         $house = $this->createHouse('Test House', 2, 75);
         $booking = $this->createBooking($user, $house);
         $userId = $user->getId();
@@ -116,7 +122,6 @@ class UserAPITest extends AbstractAPITestCase
     public function testDeleteUserNotFound(): void
     {
         $response = $this->makeRequest('DELETE', '/api/users/777');
-
         $this->assertEquals(Response::HTTP_NOT_FOUND, $response['status']);
     }
 }

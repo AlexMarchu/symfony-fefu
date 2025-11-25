@@ -16,7 +16,7 @@ class BookingAPITest extends AbstractAPITestCase
 {
     public function testGetAllBookings(): void
     {
-        $user = $this->createUser('VALERAUSSR', '+79999999999');
+        $user = $this->createUser('VALERAUSSR', '+79111111111');
         $house = $this->createHouse('Test House', 2, 75);
         $booking = $this->createBooking($user, $house);
 
@@ -37,9 +37,15 @@ class BookingAPITest extends AbstractAPITestCase
         $this->assertCount(0, $data);
     }
 
+    public function testGetAllBookingsUnauthorized(): void
+    {
+        $response = $this->makeRequest('GET', '/api/bookings', null, false);
+        $this->assertEquals(Response::HTTP_UNAUTHORIZED, $response['status']);
+    }
+
     public function testCreateBookingSuccess(): void
     {
-        $user = $this->createUser('VALERAUSSR', '+79999999999');
+        $user = $this->createUser('VALERAUSSR', '+79111111111');
         $house = $this->createHouse('Test House', 2, 75);
 
         $bookingData = [
@@ -60,7 +66,7 @@ class BookingAPITest extends AbstractAPITestCase
 
     public function testCreateBookingMissingFields(): void
     {
-        $user = $this->createUser('VALERAUSSR', '+79999999999');
+        $user = $this->createUser('VALERAUSSR', '+79111111111');
         $house = $this->createHouse('Test House', 2, 75);
 
         $bookingData = [
@@ -69,7 +75,6 @@ class BookingAPITest extends AbstractAPITestCase
         ];
 
         $response = $this->makeRequest('POST', '/api/bookings/create', $bookingData);
-
         $this->assertEquals(Response::HTTP_BAD_REQUEST, $response['status']);
     }
 
@@ -78,27 +83,24 @@ class BookingAPITest extends AbstractAPITestCase
         $house = $this->createHouse('Test House', 2, 75);
 
         $bookingData = [
-            'phone' => '+79999999999',
+            'phone' => '+79111111111',
             'house_id' => $house->getId(),
         ];
 
         $response = $this->makeRequest('POST', '/api/bookings/create', $bookingData);
-
         $this->assertEquals(Response::HTTP_NOT_FOUND, $response['status']);
     }
 
     public function testCreateBookingHouseNotFound(): void
     {
-        $user = $this->createUser('VALERAUSSR', '+79999999999');
-        $house = $this->createHouse('Test House', 2, 75);
+        $user = $this->createUser('VALERAUSSR', '+79111111111');
 
         $bookingData = [
-            'phone' => '+79999999999',
-            'house_id' => '777',
+            'phone' => $user->getPhone(),
+            'house_id' => 777,
         ];
 
         $response = $this->makeRequest('POST', '/api/bookings/create', $bookingData);
-
         $this->assertEquals(Response::HTTP_NOT_FOUND, $response['status']);
     }
 
@@ -116,14 +118,13 @@ class BookingAPITest extends AbstractAPITestCase
         ];
 
         $response = $this->makeRequest('POST', '/api/bookings/create', $bookingData);
-
         $this->assertEquals(Response::HTTP_UNPROCESSABLE_ENTITY, $response['status']);
     }
 
     public function testUpdateBookingCommentSuccess(): void
     {
         $house = $this->createHouse('Test House', 2, 75);
-        $user = $this->createUser('VALERAUSSR', '+79999999999');
+        $user = $this->createUser('VALERAUSSR', '+79111111111');
         $booking = $this->createBooking($user, $house, 'Old comment');
 
         $commentData = [
@@ -140,16 +141,11 @@ class BookingAPITest extends AbstractAPITestCase
     public function testUpdateBookingCommentMissingComment(): void
     {
         $house = $this->createHouse('Test House', 2, 75);
-        $user = $this->createUser('VALERAUSSR', '+79999999999');
+        $user = $this->createUser('VALERAUSSR', '+79111111111');
         $booking = $this->createBooking($user, $house, 'Old comment');
 
-        $commentData = [
-
-        ];
-
+        $commentData = [];
         $response = $this->makeRequest('PUT', "/api/bookings/{$booking->getId()}/comment", $commentData);
-        $data = $response['content'];
-
         $this->assertEquals(Response::HTTP_BAD_REQUEST, $response['status']);
     }
 
@@ -160,20 +156,17 @@ class BookingAPITest extends AbstractAPITestCase
         ];
 
         $response = $this->makeRequest('PUT', '/api/bookings/777/comment', $commentData);
-        $data = $response['content'];
-
         $this->assertEquals(Response::HTTP_NOT_FOUND, $response['status']);
     }
 
     public function testDeleteBooking(): void
     {
         $house = $this->createHouse('Test House', 2, 75);
-        $user = $this->createUser('VALERAUSSR', '+79999999999');
+        $user = $this->createUser('VALERAUSSR', '+79111111111');
         $booking = $this->createBooking($user, $house);
         $bookingId = $booking->getId();
 
         $response = $this->makeRequest('DELETE', "/api/bookings/{$booking->getId()}");
-
         $this->assertTrue($response['successful']);
 
         $deletedBooking = $this->entityManager->getRepository('App\Entity\Booking')->find($bookingId);
@@ -183,7 +176,6 @@ class BookingAPITest extends AbstractAPITestCase
     public function testDeleteBookingNotFound(): void
     {
         $response = $this->makeRequest('DELETE', '/api/bookings/777');
-
         $this->assertEquals(Response::HTTP_NOT_FOUND, $response['status']);
     }
 }
