@@ -4,10 +4,39 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
+use App\Controller\HouseController;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'houses')]
+#[ApiResource(
+    operations: [
+        new GetCollection(
+            uriTemplate: '/houses',
+            controller: HouseController::class . '::getAllHouses',
+            security: 'is_granted("IS_AUTHENTICATED_FULLY")'
+        ),
+        new GetCollection(
+            uriTemplate: '/houses/available',
+            controller: HouseController::class . '::getAvailableHouses',
+            security: 'is_granted("IS_AUTHENTICATED_FULLY")'
+        ),
+        new Post(
+            uriTemplate: '/houses/create',
+            controller: HouseController::class . '::createHouse',
+            security: 'is_granted("IS_AUTHENTICATED_FULLY")'
+        ),
+        new Delete(
+            uriTemplate: '/houses/{id}',
+            controller: HouseController::class . '::deleteHouse',
+            security: 'is_granted("IS_AUTHENTICATED_FULLY")'
+        ),
+    ]
+)]
 class House
 {
     #[ORM\Id]

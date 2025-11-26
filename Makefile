@@ -48,6 +48,14 @@ help:
 	@echo "  code-analysis - Run full code analysis"
 	@echo "  pre-commit    - Run checks before commit"
 
+# API Documentation
+docs-generate:
+	$(CONSOLE) api:openapi:export --output=public/docs/openapi.json --yaml
+
+docs-view:
+	@echo "API Documentation available at: http://localhost:8080/docs"
+	@echo "OpenAPI JSON: http://localhost:8080/docs.json"
+
 # Docker commands
 up:
 	$(DOCKER_COMPOSE) up -d
@@ -92,7 +100,7 @@ fixtures:
 	$(CONSOLE) doctrine:fixtures:load --no-interaction
 
 # Setup development environment
-dev-setup: up install migrate migrate-test
+dev-setup: up install migrate migrate-test docs-generate
 	@echo "Development environment is ready!"
 	@echo "API available at: http://localhost:8080"
 	@echo "Database available at: localhost:5433"

@@ -37,7 +37,7 @@ class HouseController extends AbstractController
         }
     }
 
-    #[Route('/api/houses/available', name: 'available_houses', methods: ['GET'])]
+    #[Route('/api/houses/available', name: 'available_houses', methods: ['GET'], priority: 1)]
     public function getAvailableHouses(): JsonResponse
     {
         try {

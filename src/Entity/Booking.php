@@ -4,10 +4,40 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
+use App\Controller\BookingController;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'bookings')]
+#[ApiResource(
+    operations: [
+        new GetCollection(
+            uriTemplate: '/bookings',
+            controller: BookingController::class . '::getAllBookings',
+            security: 'is_granted("IS_AUTHENTICATED_FULLY")'
+        ),
+        new Post(
+            uriTemplate: '/bookings/create',
+            controller: BookingController::class . '::createBooking',
+            security: 'is_granted("IS_AUTHENTICATED_FULLY")'
+        ),
+        new Put(
+            uriTemplate: '/booking/{id}/comment',
+            controller: BookingController::class . '::updateBookingComment',
+            security: 'is_granted("IS_AUTHENTICATED_FULLY")'
+        ),
+        new Delete(
+            uriTemplate: '/bookings/{id}',
+            controller: BookingController::class . '::deleteBooking',
+            security: 'is_granted("IS_AUTHENTICATED_FULLY")'
+        ),
+    ]
+)]
 class Booking
 {
     private const STATUS_ACTIVE = 'active';
