@@ -1,0 +1,72 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block page_title %}Панель управления - Бронирование домиков{% endblock %}
+
+{% block page_content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card border-primary mb-3">
+            <div class="card-header bg-primary text-white">
+                <i class="fas fa-house fa-fw"></i> Дома
+            </div>
+            <div class="card-body">
+                <h2 class="card-title text-center">{{ houses_count }}</h2>
+                <p class="card-text text-center">Домов</p>
+            </div>
+            <div class="card-footer text-center">
+                <a href="{{ ea_url().setController('App\\Controller\\Admin\\HouseCrudController') }}" 
+                   class="btn btn-primary btn-sm">
+                    Управление домами
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card border-success mb-3">
+            <div class="card-header bg-success text-white">
+                <i class="fas fa-calendar fa-fw"></i> Бронирования
+            </div>
+            <div class="card-body">
+                <h2 class="card-title text-center">{{ bookings_count }}</h2>
+                <p class="card-text text-center">Бронирований</p>
+            </div>
+            <div class="card-footer text-center">
+                <a href="{{ ea_url().setController('App\\Controller\\Admin\\BookingCrudController') }}" 
+                   class="btn btn-success btn-sm">
+                    Управление бронированиями
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card border-info mb-3">
+            <div class="card-header bg-info text-white">
+                <i class="fas fa-users fa-fw"></i> Пользователи
+            </div>
+            <div class="card-body">
+                <h2 class="card-title text-center">{{ users_count }}</h2>
+                <p class="card-text text-center">Пользователей</p>
+            </div>
+            <div class="card-footer text-center">
+                <a href="{{ ea_url().setController('App\\Controller\\Admin\\UserCrudController') }}" 
+                   class="btn btn-info btn-sm">
+                    Управление пользователями
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-info">
+    <h5><i class="fas fa-info-circle"></i> Добро пожаловать в админ панель!</h5>
+    <p>Здесь вы можете управлять всеми аспектами системы бронирования домиков:</p>
+    <ul>
+        <li><strong>Дома</strong> - добавляйте, редактируйте и удаляйте домики</li>
+        <li><strong>Бронирования</strong> - просматривайте и управляйте бронированиями</li>
+        <li><strong>Пользователи</strong> - управляйте пользователями системы</li>
+    </ul>
+    <p>Используйте меню слева для навигации.</p>
+</div>
+{% endblock %}

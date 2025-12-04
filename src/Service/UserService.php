@@ -31,4 +31,9 @@ class UserService
     {
         return $this->passwordHasher->isPasswordValid($user, $plainPassword);
     }
+
+    public function getPasswordHasher(): UserPasswordHasherInterface
+    {
+        return $this->passwordHasher;
+    }
 }

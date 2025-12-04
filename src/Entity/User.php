@@ -181,4 +181,32 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         /** @var non-empty-string */
         return $this->phone;
     }
+
+    public function isAdmin(): bool
+    {
+        return in_array(self::ROLE_ADMIN, $this->getRoles(), true);
+    }
+
+    public function promoteToAdmin(): self
+    {
+        $roles = $this->roles;
+        if (!in_array(self::ROLE_ADMIN, $roles, true)) {
+            $roles[] = self::ROLE_ADMIN;
+            $this->setRoles($roles);
+        }
+
+        return $this;
+    }
+
+    public function demoteFromAdmin(): self
+    {
+        $roles = $this->roles;
+        $key = array_search(self::ROLE_ADMIN, $roles, true);
+        if (false !== $key) {
+            unset($roles[$key]);
+            $this->setRoles(array_values($roles));
+        }
+
+        return $this;
+    }
 }
